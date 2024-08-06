@@ -14,7 +14,7 @@ const (
 )
 
 func main() {
-	// Сразу ставим, чтобы лишние процессоры не исопльзовались в самом начале.
+	// Сразу ставим, чтобы лишние процессоры не использовались в самом начале.
 	runtime.GOMAXPROCS(maxProc)
 
 	// Запускаем трассировку.
@@ -22,18 +22,16 @@ func main() {
 	trace.Start(f)
 	defer trace.Stop()
 	// Пример вызова функции с параметрами.
-	run(4, maxProc)
+	run(4)
 }
 
-func run(goroutineNumber, maxProcNum int) {
-	// Устанавливаем количество используемых процессоров, дублирует для тестирования бенчей.
-	runtime.GOMAXPROCS(maxProcNum)
-
+func run(goroutineNumber int) {
 	// Используем WaitGroup для того, чтобы дождаться выполнения всех горутин.
 	wg := &sync.WaitGroup{}
 	wg.Add(goroutineNumber)
 
-	findInRange(wg, goroutineNumber) // Запускам CPU-bound задачу.
+	// Запускам CPU-bound задачу.
+	findInRange(wg, goroutineNumber)
 	wg.Wait()
 }
 
@@ -47,8 +45,10 @@ func findInRange(wg *sync.WaitGroup, gNum int) {
 			end = maxPrimeNumber
 		}
 		go func(start, end int) {
-			runtime.LockOSThread() // вариант с привязкой горутины к конкретному потоку.
+			// вариант с привязкой горутины к конкретному потоку.
+			runtime.LockOSThread()
 			defer runtime.UnlockOSThread()
+
 			defer wg.Done()
 			findPrimeNumbers(start, end)
 		}(start, end)
