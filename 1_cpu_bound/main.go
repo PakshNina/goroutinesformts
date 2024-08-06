@@ -8,44 +8,46 @@ import (
 	"sync"
 )
 
+const (
+	maxPrimeNumber = 10000000
+	maxProc        = 1
+)
+
 func main() {
+	runtime.GOMAXPROCS(maxProc)
+
 	// Запускаем трассировку.
 	f, _ := os.Create("trace.out")
 	trace.Start(f)
 	defer trace.Stop()
-
-	// Make a copy of MemStats
-	var m0 runtime.MemStats
-	runtime.ReadMemStats(&m0)
-
 	// Пример вызова функции с параметрами.
-	run(10000000, 20, 4)
+	run(4, maxProc)
 }
 
-func run(maxPrimeNumber, goroutineNumber, maxProcs int) {
+func run(goroutineNumber, maxProcNum int) {
 	// Устанавливаем количество используемых процессоров.
-	runtime.GOMAXPROCS(maxProcs)
+	runtime.GOMAXPROCS(maxProcNum)
 
 	// Используем WaitGroup для того, чтобы дождаться выполнения всех горутин.
 	wg := &sync.WaitGroup{}
 	wg.Add(goroutineNumber)
 
-	findInRange(wg, maxPrimeNumber, goroutineNumber) // Запускам CPU-bound задачу.
+	findInRange(wg, goroutineNumber) // Запускам CPU-bound задачу.
 	wg.Wait()
 }
 
 // Ищем простые числа в заданном количестве горутин.
-func findInRange(wg *sync.WaitGroup, maxPrimeNum, gNum int) {
-	step := maxPrimeNum / gNum
+func findInRange(wg *sync.WaitGroup, gNum int) {
+	step := maxPrimeNumber / gNum
 	for i := 0; i < gNum; i++ {
 		start := i * step
 		end := (i + 1) * step
 		if i == gNum-1 {
-			end = maxPrimeNum
+			end = maxPrimeNumber
 		}
 		go func(start, end int) {
-			//runtime.LockOSThread() --- вариант с привязкой горутины к конкретному потоку.
-			//defer runtime.UnlockOSThread()
+			runtime.LockOSThread() // вариант с привязкой горутины к конкретному потоку.
+			defer runtime.UnlockOSThread()
 			defer wg.Done()
 			findPrimeNumbers(start, end)
 		}(start, end)

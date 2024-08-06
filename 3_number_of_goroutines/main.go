@@ -10,15 +10,14 @@ import (
 )
 
 const (
-	n      = 5000000
-	result = `Number of goroutines: %d
-Total:
-  Time:          %.2f s
-  Memory:        %.2f Gb
-  Scanned stack last GC: %.2f Mb
+	n      = 1000000
+	result = `Total:
+  Time:         %.2f s
+  Memory:       %.2f Gb
+  Stack memory: %.2f Gb
 Per goroutine:
-  Time:          %.2f µs
-  Memory:        %.2f Kb
+  Time:         %.2f µs
+  Memory:       %.2f Kb
 `
 )
 
@@ -41,15 +40,16 @@ func main() {
 	}
 	runtime.GC()
 
-	totalTime, totalMemory, scannedStack := getTimeAndMemory()
-	fmt.Printf(result, n, totalTime, totalMemory/(1<<30), scannedStack/(1<<20), totalTime/n*1e6, totalMemory/n)
+	totalTime, totalMemory, allStackMemory := getTimeAndMemory()
+	fmt.Printf("Number of goroutines: %d\n", runtime.NumGoroutine())
+	fmt.Printf(result, totalTime, totalMemory/(1<<30), allStackMemory/(1<<30), totalTime/n*1e6, allStackMemory/n)
 }
 
 func getTimeAndMemory() (float64, float64, float64) {
 	s := []metrics.Sample{
 		{Name: "/cpu/classes/user:cpu-seconds"},
 		{Name: "/memory/classes/total:bytes"},
-		{Name: "/gc/scan/stack:bytes"},
+		{Name: "/memory/classes/heap/stacks:bytes"},
 	}
 	metrics.Read(s)
 	return s[0].Value.Float64(), float64(s[1].Value.Uint64()), float64(s[2].Value.Uint64())
