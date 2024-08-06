@@ -9,9 +9,10 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(1) // Запускаем на 1 процессоре.
+	// Запускаем на 1 процессоре.
+	runtime.GOMAXPROCS(1)
 
-	// Трассировка
+	// Трассировка.
 	f, _ := os.Create("trace.out")
 	trace.Start(f)
 	defer trace.Stop()

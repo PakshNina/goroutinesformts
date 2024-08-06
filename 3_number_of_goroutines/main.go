@@ -10,14 +10,14 @@ import (
 )
 
 const (
-	n      = 1000000
-	result = `Total:
-  Time:         %.2f s
-  Memory:       %.2f Gb
-  Stack memory: %.2f Gb
-Per goroutine:
-  Time:         %.2f µs
-  Memory:       %.2f Kb
+	n      = 5000000
+	result = `Общее:
+  Время:        %.2f c
+  Память:       %.2f Гб
+  Память стека: %.2f Гб
+На горутину:
+  Время:        %.2f мкс
+  Память:       %.2f Кб
 `
 )
 
@@ -28,21 +28,23 @@ func goroutine() {
 }
 
 func main() {
+	runtime.GOMAXPROCS(1) // Используем один процессор.
+
 	f, _ := os.Create("trace.out")
 	trace.Start(f)
 	defer trace.Stop()
 
 	debug.SetGCPercent(-1) // Выключаем GC.
-	runtime.GOMAXPROCS(1)  // Используем один процессор.
 
 	for i := 0; i < n; i++ {
 		go goroutine()
 	}
-	runtime.GC()
+	runtime.GC() // Запускаем GC.
 
 	totalTime, totalMemory, allStackMemory := getTimeAndMemory()
-	fmt.Printf("Number of goroutines: %d\n", runtime.NumGoroutine())
-	fmt.Printf(result, totalTime, totalMemory/(1<<30), allStackMemory/(1<<30), totalTime/n*1e6, allStackMemory/n)
+	goNum := runtime.NumGoroutine()
+	fmt.Printf("Количество горутин: %d\n", goNum)
+	fmt.Printf(result, totalTime, totalMemory/(1<<30), allStackMemory/(1<<30), totalTime/n*1e6, allStackMemory/float64(goNum))
 }
 
 func getTimeAndMemory() (float64, float64, float64) {
